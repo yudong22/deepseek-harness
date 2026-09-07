@@ -16,7 +16,7 @@ Status: implemented
 
 插件在凭据解析成功后惰性获取用户 id，并在该插件实例内缓存。缺少凭据不会创建 `.anonymous-user-id`；即使设置了 `DSH_TELEMETRY_DISABLED`，首个已授权的提供方请求仍可能创建它。直连适配器构造函数接收 `resolveUserId` 依赖，使线路行为可在单元测试中保持确定性。
 
-两个头部都是发送到解析后 `baseURL` 的模型不可见 HTTP 元数据。身份值不在 JSON 请求体中，也不会成为模型可见输入或会话事件。配置的网关会收到它们。提供方特定正文扩展由 [DeepSeek LLM API 扩展决策](../architecture/2026-08-21-deepseek-llm-api-request-extensions.zh.md)单独拥有。遥测共享只控制遥测导出，不会禁用提供方请求身份。
+两个头部都是发送到解析后 `baseURL` 的模型不可见 HTTP 元数据。身份值不在 JSON 请求体中，也不会成为模型可见输入或会话事件。配置的网关会收到它们。提供方特定正文扩展由 [DeepSeek LLM API 扩展决策](../architecture/2026-08-21-deepseek-llm-api-request-extensions.zh.md)单独拥有。遥测共享只控制遥测导出，不会禁用提供方请求身份。pi-ai 路由按[pi-ai 会话头部决策](2026-09-07-pi-ai-configurable-session-header.zh.md)命名携带同一会话 id 的字段。
 
 ## 验证
 

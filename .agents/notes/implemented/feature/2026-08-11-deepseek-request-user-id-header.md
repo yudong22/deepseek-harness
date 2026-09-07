@@ -16,7 +16,7 @@ The user id is transport metadata, not model input. It must not enter the reques
 
 The plugin resolves the user id lazily after credentials succeed and memoizes it for that plugin instance. A missing credential therefore does not create `.anonymous-user-id`, while the first authorized provider request can create it even when `DSH_TELEMETRY_DISABLED` is set. The direct adapter constructor accepts a `resolveUserId` dependency so wire behavior remains deterministic in unit tests.
 
-Both headers are model-hidden HTTP metadata sent to the resolved `baseURL`. The identity values are absent from the JSON request body and do not become model-visible inputs or session events. A configured gateway receives them. Provider-specific body extensions are owned separately by the [DeepSeek LLM API extension decision](../architecture/2026-08-21-deepseek-llm-api-request-extensions.md). SessionTelemetryBackend sharing controls only telemetry export and does not disable provider request identity.
+Both headers are model-hidden HTTP metadata sent to the resolved `baseURL`. The identity values are absent from the JSON request body and do not become model-visible inputs or session events. A configured gateway receives them. Provider-specific body extensions are owned separately by the [DeepSeek LLM API extension decision](../architecture/2026-08-21-deepseek-llm-api-request-extensions.md). SessionTelemetryBackend sharing controls only telemetry export and does not disable provider request identity. A pi-ai route names the field that carries this same session id on its own requests under [the pi-ai session-header decision](2026-09-07-pi-ai-configurable-session-header.md).
 
 ## Verification
 
