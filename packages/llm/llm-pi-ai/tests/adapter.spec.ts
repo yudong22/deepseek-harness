@@ -123,6 +123,40 @@ describe('PiAiAdapter provider routing', () => {
     expect(server.headers[0]?.['user-agent']).toBe(userAgent())
   })
 
+  it('forwards configured sessionHeader when sessionId is present', async () => {
+    const server = await mockServer([{ events: textEvents }, { events: textEvents }])
+    const ctx = await harness(server.url, {
+      sessionHeader: 'x-opencode-session',
+      headers: { 'x-other': 'val', 'x-opencode-session': 'static-stale' },
+    })
+    await assemble(ctx, {
+      model: 'deepseek-v4-flash',
+      messages: [],
+      sessionId: 'test-session-123' as never,
+    })
+    expect(server.headers[0]?.['x-opencode-session']).toBe('test-session-123')
+    expect(server.headers[0]?.['x-other']).toBe('val')
+
+    await assemble(ctx, {
+      model: 'deepseek-v4-flash',
+      messages: [],
+    })
+    expect(server.headers[1]?.['x-opencode-session']).toBe('static-stale')
+  })
+
+  it('preserves Harness attribution when sessionHeader collides with reserved attribution', async () => {
+    const server = await mockServer([{ events: textEvents }])
+    const ctx = await harness(server.url, {
+      sessionHeader: 'User-Agent',
+    })
+    await assemble(ctx, {
+      model: 'deepseek-v4-flash',
+      messages: [],
+      sessionId: 'test-session-123' as never,
+    })
+    expect(server.headers[0]?.['user-agent']).toBe(userAgent())
+  })
+
   it('forwards common stream options and profile reasoning', async () => {
     const server = await mockServer([{ events: textEvents }])
     const ctx = await harness(server.url, {
@@ -843,6 +877,17 @@ describe('provider profile lifecycle', () => {
   ])('rejects provider header %j when Fetch cannot represent the entry', (name, value) => {
     expect(() => resolveProfiles({ openai: { headers: { [name]: value } } }))
       .toThrow(`provider "openai" header "${name}" is not valid for Fetch`)
+  })
+
+  it('rejects empty or invalid sessionHeader at profile resolution', () => {
+    expect(() => resolveProfiles({ openai: { sessionHeader: '' } }))
+      .toThrow('provider "openai" sessionHeader must be a non-empty HTTP header name')
+    expect(() => resolveProfiles({ openai: { sessionHeader: '   ' } }))
+      .toThrow('provider "openai" sessionHeader must be a non-empty HTTP header name')
+    expect(() => resolveProfiles({ openai: { sessionHeader: 'bad header name' } }))
+      .toThrow('provider "openai" sessionHeader "bad header name" is not valid for Fetch')
+    expect(() => resolveProfiles({ openai: { sessionHeader: 'x-session\n' } }))
+      .toThrow('provider "openai" sessionHeader "x-session\n" is not valid for Fetch')
   })
 
   it.each(['maxRetries', 'maxRetryDelayMs'] as const)(

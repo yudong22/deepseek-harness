@@ -146,6 +146,8 @@ export interface PiAiProviderProfile {
   defaultInput?: PiAiModality[]
   /** Provider request headers, validated against Fetch when the profile resolves; Harness attribution wins reserved names. */
   headers?: Record<string, string>
+  /** Header name used to transmit the current session id on requests made to this provider route. */
+  sessionHeader?: string
   /** Provider-neutral pi-ai reasoning level. */
   reasoning?: ModelThinkingLevel
   /** Token budgets used by reasoning providers that support them. */
@@ -323,6 +325,7 @@ const profile = z.object({
   defaultMaxTokens: z.number().step(1).min(1).default(DEFAULT_MAX_TOKENS),
   defaultInput: z.array(z.union(MODALITIES)).default([...DEFAULT_INPUT]),
   headers: z.dict(z.string()),
+  sessionHeader: z.string(),
   reasoning: z.union(THINKING_LEVELS),
   thinkingBudgets,
   cacheRetention: z.union(['none', 'short', 'long']),
@@ -415,6 +418,19 @@ export function resolveProfiles(
       throw new Error(`llm-pi-ai: provider "${provider}" has an empty displayName`)
     }
     assertValidHeaders(provider, source.headers)
+    if (source.sessionHeader !== undefined) {
+      if (source.sessionHeader.trim().length === 0) {
+        throw new Error(`llm-pi-ai: provider "${provider}" sessionHeader must be a non-empty HTTP header name`)
+      }
+      try {
+        new Headers([[source.sessionHeader, 'session-id']])
+      } catch {
+        throw new Error(
+          `llm-pi-ai: provider "${provider}" sessionHeader "${source.sessionHeader}" is not valid for Fetch;`
+          + ' use a valid HTTP field name',
+        )
+      }
+    }
     const streamIdleTimeoutMs = source.streamIdleTimeoutMs ?? DEFAULT_STREAM_IDLE_TIMEOUT_MS
     if (!Number.isFinite(streamIdleTimeoutMs)
       || streamIdleTimeoutMs <= 0
