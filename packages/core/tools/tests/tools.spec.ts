@@ -9,7 +9,7 @@ import AgentLoop from '@deepseek-ai/dsh-agent-loop'
 import ApprovalService, { type ApprovalOutcome, type ApprovalRequest } from '@deepseek-ai/dsh-user-approval'
 import ToolRuntime, {
   defineContentToolFixture, defineTool, JsonSchemaError, parameterSchemaSpecToJsonSchema, validateArgs, ToolArgsError, ToolNotFoundError,
-  TOOL_ABORTED, TOOL_ABORTED_BEFORE_DISPATCH,
+  TOOL_ABORTED, TOOL_ABORTED_BEFORE_DISPATCH, TOOL_RUNTIME_SCHEDULER,
   type InferArgs, type ParameterSchemaSpec, type PreToolDecision, type PostToolDecision,
   type JsonSchemaNode, type ToolDefinition, type ToolDispatchExecution, type ToolExecutionResult, type ToolExecutionToken,
 } from '@deepseek-ai/dsh-tools'
@@ -53,6 +53,13 @@ describe('ToolRuntime', () => {
 
     const assembly = await ctx.systemPrompt.assemble()
     expect(assembly.tools.map(t => t.name)).toEqual(['echo'])
+  })
+
+  it('exposes the internal scheduler through the global symbol', async () => {
+    const ctx = await setup()
+    expect(TOOL_RUNTIME_SCHEDULER).toBe(Symbol.for('@deepseek-ai/dsh-tools.scheduler'))
+    expect(ctx.tools[TOOL_RUNTIME_SCHEDULER]).toBeDefined()
+    expect(typeof ctx.tools[TOOL_RUNTIME_SCHEDULER].prepare).toBe('function')
   })
 
   it('schemas() drops host callbacks — they must never reach the model', async () => {
